@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>التقرير اليومي للحلقات | مؤسسة هدي القرآن</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: var(--tg-theme-secondary-bg-color, #f2f5f3);
+      --card: var(--tg-theme-bg-color, #ffffff);
+      --text: var(--tg-theme-text-color, #18231e);
+      --muted: var(--tg-theme-hint-color, #64748b);
+      --primary: #0f5132;
+      --primary-soft: #e6f4ea;
+      --late: #ea580c;
+      --late-soft: #ffedd5;
+      --warn: #d97706;
+      --warn-soft: #fef3c7;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --gold: #c59b27;
+      --border: rgba(15, 81, 50, 0.13);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; padding: 0 0 100px 0;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      line-height: 1.45;
+    }
+
+    /* الترويسة */
+    .header {
+      background: linear-gradient(135deg, #0b3d26 0%, #146c43 100%);
+      color: #fff; padding: 14px 16px 18px;
+      border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+      box-shadow: 0 4px 14px rgba(15, 81, 50, 0.2);
+    }
+    .header-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .inst-name { font-size: 12px; opacity: 0.9; font-weight: 700; }
+    .teacher-greeting { font-size: 17px; font-weight: 800; margin: 2px 0 8px; }
+
+    .date-input {
+      background: rgba(255,255,255,0.16); color: #fff;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 10px; padding: 5px 10px;
+      font-family: inherit; font-size: 12px; font-weight: 700; outline: none;
+    }
+    .date-input::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+    .circle-tabs { display: flex; gap: 6px; overflow-x: auto; padding-top: 6px; }
+    .circle-tab {
+      background: rgba(255,255,255,0.15); color: #fff;
+      border: 1px solid rgba(255,255,255,0.28);
+      padding: 6px 13px; border-radius: 999px;
+      font-family: inherit; font-size: 12px; font-weight: 700;
+      cursor: pointer; white-space: nowrap; transition: 0.15s;
+    }
+    .circle-tab.active { background: #fff; color: var(--primary); border-color: #fff; }
+    .track-badge { font-size: 10px; opacity: 0.8; margin-right: 4px; }
+
+    .container { padding: 12px 13px; max-width: 660px; margin: 0 auto; }
+
+    /* الشرائط التنبيهية */
+    .banner {
+      padding: 9px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;
+      margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .banner-edit { background: var(--warn-soft); color: #92400e; border: 1px solid #fcd34d; }
+    .banner-test { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
+
+    /* بطاقة درس اليوم الجماعي */
+    .session-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px;
+    }
+    .session-head {
+      display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; font-size: 13px; font-weight: 800; color: var(--primary);
+    }
+    .session-body { margin-top: 10px; display: none; }
+    .session-body.open { display: block; }
+    .input-row { display: flex; gap: 6px; margin-bottom: 8px; }
+    .txt-input {
+      width: 100%; padding: 8px 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text);
+      font-family: inherit; font-size: 13px; outline: none;
+    }
+    .txt-input:focus { border-color: var(--primary); }
+    .btn-apply {
+      background: var(--primary-soft); color: var(--primary);
+      border: 1px solid rgba(15,81,50,0.25); border-radius: 10px;
+      padding: 0 12px; font-family: inherit; font-size: 12px; font-weight: 800;
+      white-space: nowrap; cursor: pointer;
+    }
+
+    .quick-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px; font-size: 12px; color: var(--muted);
+    }
+    .btn-mini {
+      background: var(--card); border: 1px solid var(--border); color: var(--primary);
+      padding: 4px 10px; border-radius: 8px; font-family: inherit;
+      font-size: 11px; font-weight: 800; cursor: pointer;
+    }
+
+    /* بطاقة الطالب */
+    .student-card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 12px 13px; margin-bottom: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .student-card.st-present { border-right: 4px solid var(--primary); }
+    .student-card.st-late    { border-right: 4px solid var(--late); }
+    .student-card.st-excused { border-right: 4px solid var(--warn); }
+    .student-card.st-absent  { border-right: 4px solid var(--danger); }
+
+    .student-top {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .student-name { font-size: 15px; font-weight: 800; }
+    .student-meta {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .alert-pill {
+      background: var(--danger-soft); color: var(--danger);
+      padding: 1px 7px; border-radius: 6px; font-weight: 800;
+    }
+    .points-badge {
+      background: var(--primary-soft); color: var(--primary);
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 800; white-space: nowrap;
+    }
+    .student-card.st-absent .points-badge,
+    .student-card.st-excused .points-badge {
+      background: #f1f5f9; color: var(--muted);
+    }
+
+    /* أزرار الحضور الأربعة */
+    .status-group {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+      margin-bottom: 9px;
+    }
+    .status-btn {
+      padding: 6px 2px; border-radius: 9px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .status-btn.act-present { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .status-btn.act-late    { background: var(--late);    color: #fff; border-color: var(--late); }
+    .status-btn.act-excused { background: var(--warn);    color: #fff; border-color: var(--warn); }
+    .status-btn.act-absent  { background: var(--danger);  color: #fff; border-color: var(--danger); }
+
+    /* قسم الأداء والنقاط */
+    .attended-zone.disabled { opacity: 0.35; pointer-events: none; }
+    .section-label { font-size: 11px; color: var(--muted); font-weight: 700; margin: 6px 0 4px; }
+
+    .pill-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .grade-btn {
+      padding: 4px 9px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text);
+      font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+    }
+    .grade-btn.selected {
+      background: var(--primary); color: #fff; border-color: var(--primary);
+    }
+
+    .chip-btn {
+      padding: 4px 9px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text);
+      font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+    }
+    .chip-btn.selected {
+      background: #fef9c3; color: #854d0e; border-color: var(--gold);
+      box-shadow: 0 0 0 1px var(--gold);
+    }
+
+    /* درج تفاصيل الإنجاز الاحترافية */
+    .details-toggle {
+      width: 100%; margin-top: 9px; padding: 6px 10px;
+      border-radius: 9px; border: 1px dashed var(--border);
+      background: rgba(15, 81, 50, 0.03); color: var(--primary);
+      font-family: inherit; font-size: 12px; font-weight: 800;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    }
+    .details-drawer {
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);
+      display: none;
+    }
+    .details-drawer.open { display: block; }
+
+    .detail-grid {
+      display: grid; grid-template-columns: 1fr auto; gap: 6px;
+      align-items: center; margin-bottom: 8px;
+    }
+    .stepper {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 9px; padding: 2px 4px;
+    }
+    .step-btn {
+      width: 26px; height: 26px; border-radius: 7px; border: none;
+      background: var(--card); color: var(--primary); font-weight: 800;
+      font-size: 15px; cursor: pointer;
+    }
+    .step-val {
+      min-width: 30px; text-align: center; font-size: 12px; font-weight: 800;
+    }
+
+    .mini-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+    .mini-pill {
+      padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--muted);
+      font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+    }
+    .mini-pill.selected { background: #1e293b; color: #fff; border-color: #1e293b; }
+
+    /* الشريط السفلي الثابت */
+    .footer-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 1px solid var(--border);
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.07); z-index: 50;
+    }
+    .footer-inner {
+      max-width: 660px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .stats-mini { font-size: 11.5px; font-weight: 700; line-height: 1.5; }
+    .submit-btn {
+      background: var(--primary); color: #fff; border: none;
+      padding: 11px 20px; border-radius: 12px;
+      font-family: inherit; font-size: 14px; font-weight: 800;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .state-box {
+      background: var(--card); border-radius: 16px; padding: 26px 18px;
+      text-align: center; margin-top: 22px; border: 1px solid var(--border);
+    }
+    .id-box {
+      background: var(--bg); padding: 10px; border-radius: 10px;
+      font-family: monospace; font-size: 18px; font-weight: 800;
+      margin: 12px 0; letter-spacing: 1px; user-select: all;
+    }
+    .toast {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      background: #111827; color: #fff; padding: 10px 18px;
+      border-radius: 12px; font-size: 13px; font-weight: 700;
+      z-index: 100; box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+      display: none; max-width: 92%; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="header">
+    <div class="header-top">
+      <div class="inst-name" id="instName">مؤسسة هدي القرآن التعليمية</div>
+      <input type="date" id="datePicker" class="date-input" />
+    </div>
+    <div class="teacher-greeting" id="teacherGreeting">جاري التحميل...</div>
+    <div class="circle-tabs" id="circleTabs"></div>
+  </div>
+
+  <div class="container">
+    <div id="testBanner" class="banner banner-test" style="display:none;">
+      <span>🛠️ وضع الاختبار المحلي (على المتصفح)</span>
+      <span id="testIdLabel"></span>
+    </div>
+    <div id="editBanner" class="banner banner-edit" style="display:none;">
+      <span>🔄 وضع التعديل: هذا التقرير مرفوع مسبقاً، وأي حفظ سيحدّثه دون تكرار.</span>
+    </div>
+
+    <!-- بطاقة درس اليوم الجماعي -->
+    <div id="sessionBox" class="session-box" style="display:none;">
+      <div class="session-head" onclick="HQ_App.toggleSessionBox()">
+        <span>📖 درس اليوم العام وملاحظة الحلقة (اختياري)</span>
+        <span id="sessionArrow">▼</span>
+      </div>
+      <div id="sessionBody" class="session-body">
+        <div class="input-row">
+          <input type="text" id="sessionTopicInput" class="txt-input"
+                 placeholder="مثلاً: الدرس الخامس - الفتحة / سورة النبأ..."
+                 oninput="HQ_App.setSessionField('topic', this.value)" />
+          <button type="button" class="btn-apply" onclick="HQ_App.applyTopicToAll()">تعميم للحاضرين</button>
+        </div>
+        <input type="text" id="sessionNoteInput" class="txt-input"
+               placeholder="ملاحظة عامة للإدارة عن سير الحلقة اليوم..."
+               oninput="HQ_App.setSessionField('note', this.value)" />
+      </div>
+    </div>
+
+    <div id="quickBar" class="quick-bar" style="display:none;">
+      <span>الجميع "حاضر" تلقائياً — عدّل الاستثناءات فقط</span>
+      <button type="button" class="btn-mini" onclick="HQ_App.markAllPresent()">إعادة الكل حاضر</button>
+    </div>
+
+    <div id="contentArea">
+      <div class="state-box">⏳ جاري جلب بيانات الحلقة وإعداداتها...</div>
+    </div>
+  </div>
+
+  <div class="footer-bar" id="footerBar" style="display:none;">
+    <div class="footer-inner">
+      <div class="stats-mini" id="liveStats"></div>
+      <button type="button" class="submit-btn" id="submitBtn" onclick="HQ_App.submitReport()">اعتماد وحفظ التقرير</button>
+    </div>
+  </div>
+
+  <!-- ===============================================================
+       المكان الوحيد الذي تعدّله لربط الملف بـ Google Apps Script
+       =============================================================== -->
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbz2mO6bU_KU5DeTXt-sQ3HrrLQiN2sfFQHyKQXiXGc07FI1WRW-CC5F-J0HCZZZdAPzDg/exec';
+    const LOCAL_TEST_TEACHER_ID = '111111111';
+  </script>
+
+  <script>
+    (function () {
+      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+      if (tg) { tg.ready(); tg.expand(); }
+
+      const TAJWEED_OPTS = ['متقن', 'مقبول', 'يحتاج تدريب'];
+      const HOMEWORK_OPTS = ['مكتمل', 'ناقص', 'لم يُنجز'];
+
+      const state = {
+        teacherId: '',
+        isTestMode: false,
+        date: getLocalToday(),
+        cfg: {},
+        circles: [],
+        activeCircleId: '',
+        students: [],
+        existingLogs: {},
+        existingSessions: {},
+        sessionTopic: '',
+        sessionNote: '',
+        records: {},
+        expandedCards: new Set()
+      };
+
+      function getLocalToday() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+
+      function escapeHtml(str) {
+        return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function showToast(msg, duration = 3200) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.style.display = 'block';
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => { el.style.display = 'none'; }, duration);
+      }
+
+      function haptic(type = 'light') {
+        try { if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred(type); } catch (e) {}
+      }
+
+      function detectTeacherId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('test_id')) {
+          state.isTestMode = true;
+          return urlParams.get('test_id').trim();
+        }
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+          return String(tg.initDataUnsafe.user.id);
+        }
+        state.isTestMode = true;
+        return LOCAL_TEST_TEACHER_ID;
+      }
+
+      async function loadData() {
+        const content = document.getElementById('contentArea');
+        document.getElementById('footerBar').style.display = 'none';
+        document.getElementById('quickBar').style.display = 'none';
+        document.getElementById('sessionBox').style.display = 'none';
+        document.getElementById('editBanner').style.display = 'none';
+
+        if (!API_URL || API_URL.includes('PUT_YOUR_')) {
+          content.innerHTML = `<div class="state-box">⚠️ يرجى وضع رابط تطبيق الويب (<code>API_URL</code>) في المكان المخصص داخل ملف <code>index.html</code>.</div>`;
+          return;
+        }
+
+        content.innerHTML = `<div class="state-box">⏳ جاري جلب بيانات الحلقة لتاريخ ${state.date}...</div>`;
+
+        try {
+          const url = `${API_URL}?action=getTeacherData&teacher_id=${encodeURIComponent(state.teacherId)}&date=${encodeURIComponent(state.date)}`;
+          const res = await fetch(url);
+          const data = await res.json();
+
+          if (!data.ok) {
+            if (data.error === 'UNAUTHORIZED') {
+              document.getElementById('teacherGreeting').textContent = 'مرحباً بك';
+              content.innerHTML = `
+                <div class="state-box">
+                  <div style="font-size:34px;margin-bottom:8px;">🔐</div>
+                  <div style="font-weight:800;margin-bottom:6px;">الحساب بانتظار التفعيل</div>
+                  <div style="font-size:13px;color:var(--muted);">${escapeHtml(data.message)}</div>
+                  <div class="id-box">${escapeHtml(data.teacher_id || state.teacherId)}</div>
+                  <button class="submit-btn" style="width:100%;" onclick="HQ_App.copyId()">نسخ رقم المعرّف لإرساله للإدارة</button>
+                </div>`;
+              return;
+            }
+            throw new Error(data.message || 'تعذر جلب البيانات');
+          }
+
+          document.getElementById('instName').textContent = data.institute_name;
+          document.getElementById('teacherGreeting').textContent = `أهلاً أستاذ ${data.teacher_name}`;
+
+          state.cfg = data.ui_config || {};
+          state.circles = data.circles || [];
+          state.students = data.students || [];
+          state.existingLogs = data.existing_logs || {};
+          state.existingSessions = data.existing_sessions || {};
+
+          if (!state.activeCircleId || !state.circles.some(c => c.circle_id === state.activeCircleId)) {
+            state.activeCircleId = state.circles[0] ? state.circles[0].circle_id : '';
+          }
+
+          renderCircleTabs();
+          buildCircleRecords();
+          renderAll();
+        } catch (err) {
+          content.innerHTML = `
+            <div class="state-box">
+              <div style="color:var(--danger);font-weight:800;margin-bottom:8px;">حدث خطأ في الاتصال</div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">${escapeHtml(err.message)}</div>
+              <button class="submit-btn" onclick="HQ_App.reload()">إعادة المحاولة</button>
+            </div>`;
+        }
+      }
+
+      function renderCircleTabs() {
+        const tabsEl = document.getElementById('circleTabs');
+        tabsEl.innerHTML = state.circles.map(c => {
+          const trackHtml = c.track ? `<span class="track-badge">• ${escapeHtml(c.track)}</span>` : '';
+          return `<button type="button" class="circle-tab ${c.circle_id === state.activeCircleId ? 'active' : ''}"
+                    onclick="HQ_App.selectCircle('${escapeHtml(c.circle_id)}')">
+                    ${escapeHtml(c.circle_name)} ${trackHtml}
+                  </button>`;
+        }).join('');
+      }
+
+      function buildCircleRecords() {
+        state.records = {};
+        state.expandedCards.clear();
+
+        const prevSession = state.existingSessions[state.activeCircleId] || {};
+        state.sessionTopic = prevSession.session_topic || '';
+        state.sessionNote = prevSession.session_note || '';
+        document.getElementById('sessionTopicInput').value = state.sessionTopic;
+        document.getElementById('sessionNoteInput').value = state.sessionNote;
+
+        const circleStudents = state.students.filter(s => s.circle_id === state.activeCircleId);
+        let hasExisting = false;
+
+        circleStudents.forEach(s => {
+          const logKey = `${state.activeCircleId}_${s.student_id}`;
+          const prev = state.existingLogs[logKey];
+
+          if (prev) {
+            hasExisting = true;
+            state.records[s.student_id] = {
+              student_name: s.student_name,
+              attendance: prev.attendance || 'حاضر',
+              performance_grade: prev.performance_grade || '',
+              new_lesson: prev.new_lesson || '',
+              new_amount: Number(prev.new_amount) || 0,
+              review_lesson: prev.review_lesson || '',
+              review_amount: Number(prev.review_amount) || 0,
+              tajweed: prev.tajweed || '',
+              homework: prev.homework || '',
+              custom_points: Number(prev.custom_points) || 0,
+              selectedTags: new Set(prev.tags || []),
+              note: prev.note || ''
+            };
+          } else {
+            state.records[s.student_id] = {
+              student_name: s.student_name,
+              attendance: 'حاضر',
+              performance_grade: '',
+              new_lesson: '',
+              new_amount: 0,
+              review_lesson: '',
+              review_amount: 0,
+              tajweed: '',
+              homework: '',
+              custom_points: 0,
+              selectedTags: new Set(),
+              note: ''
+            };
+          }
+
+          if (state.cfg.auto_expand_details) {
+            state.expandedCards.add(s.student_id);
+          }
+        });
+
+        document.getElementById('editBanner').style.display = hasExisting ? 'flex' : 'none';
+      }
+
+      function calcPoints(rec) {
+        if (rec.attendance !== 'حاضر' && rec.attendance !== 'متأخر') {
+          return { base: 0, grade: 0, bonus: 0, custom: 0, total: 0 };
+        }
+        const base = rec.attendance === 'حاضر'
+          ? (Number(state.cfg.base_points_present) || 0)
+          : (Number(state.cfg.base_points_late) || 0);
+
+        let grade = 0;
+        if (rec.performance_grade && Array.isArray(state.cfg.performance_grades)) {
+          const found = state.cfg.performance_grades.find(g => g.label === rec.performance_grade);
+          if (found) grade = Number(found.points) || 0;
+        }
+
+        let bonus = 0;
+        if (Array.isArray(state.cfg.quick_chips)) {
+          state.cfg.quick_chips.forEach(chip => {
+            if (rec.selectedTags.has(chip.label)) bonus += Number(chip.points) || 0;
+          });
+        }
+
+        const custom = Number(rec.custom_points) || 0;
+        const total = Math.max(0, base + grade + bonus + custom);
+        return { base, grade, bonus, custom, total };
+      }
+
+      function hasFilledDetails(rec) {
+        return Boolean(
+          rec.new_lesson || rec.new_amount || rec.review_lesson ||
+          rec.review_amount || rec.tajweed || rec.homework ||
+          rec.custom_points || rec.note
+        );
+      }
+
+      function renderAll() {
+        const content = document.getElementById('contentArea');
+        const circleStudents = state.students.filter(s => s.circle_id === state.activeCircleId);
+
+        if (circleStudents.length === 0) {
+          content.innerHTML = `<div class="state-box">لا يوجد طلاب مسجلون في هذه الحلقة حالياً.</div>`;
+          document.getElementById('footerBar').style.display = 'none';
+          document.getElementById('quickBar').style.display = 'none';
+          document.getElementById('sessionBox').style.display = 'none';
+          return;
+        }
+
+        document.getElementById('quickBar').style.display = 'flex';
+        document.getElementById('footerBar').style.display = 'block';
+        document.getElementById('sessionBox').style.display = state.cfg.show_session_topic ? 'block' : 'none';
+
+        const grades = state.cfg.performance_grades || [];
+        const chips = state.cfg.quick_chips || [];
+        const threshold = Number(state.cfg.absence_alert_threshold) || 3;
+
+        content.innerHTML = circleStudents.map(s => {
+          const sid = s.student_id;
+          const rec = state.records[sid];
+          const pts = calcPoints(rec);
+          const isAttended = (rec.attendance === 'حاضر' || rec.attendance === 'متأخر');
+          const stClass = rec.attendance === 'حاضر' ? 'st-present'
+                        : rec.attendance === 'متأخر' ? 'st-late'
+                        : rec.attendance === 'مستأذن' ? 'st-excused' : 'st-absent';
+
+          // سطر ذاكرة الحلقة التلقائية
+          const metaParts = [];
+          if (s.last_new) metaParts.push(`📌 آخر إنجاز: ${escapeHtml(s.last_new)}`);
+          if (s.last_review) metaParts.push(`🔁 مراجعة: ${escapeHtml(s.last_review)}`);
+          if (s.consecutive_absences >= 2) {
+            metaParts.push(`<span class="alert-pill">⚠️ غياب متتالي: ${s.consecutive_absences}${s.consecutive_absences >= threshold ? ' (إنذار)' : ''}</span>`);
+          }
+
+          // أزرار التقييم السريع
+          const gradesHtml = (state.cfg.show_performance_grade && grades.length > 0) ? `
+            <div class="section-label">تقييم الأداء / التسميع:</div>
+            <div class="pill-row">
+              ${grades.map((g, idx) => `
+                <button type="button" class="grade-btn ${rec.performance_grade === g.label ? 'selected' : ''}"
+                        onclick="HQ_App.toggleGrade('${escapeHtml(sid)}', ${idx})">
+                  ${escapeHtml(g.label)}${g.points ? ` (+${g.points})` : ''}
+                </button>`).join('')}
+            </div>` : '';
+
+          // أزرار النقاط السريعة
+          const chipsHtml = (state.cfg.show_bonus_chips && chips.length > 0) ? `
+            <div class="section-label">نقاط التميز السريعة:</div>
+            <div class="pill-row">
+              ${chips.map((c, idx) => `
+                <button type="button" class="chip-btn ${rec.selectedTags.has(c.label) ? 'selected' : ''}"
+                        onclick="HQ_App.toggleChip('${escapeHtml(sid)}', ${idx})">
+                  +${c.points} ${escapeHtml(c.label)}
+                </button>`).join('')}
+            </div>` : '';
+
+          // درج التفاصيل الاحترافية
+          const isExpanded = state.expandedCards.has(sid);
+          const filledMark = hasFilledDetails(rec) ? ' ✅' : '';
+          const detailsHtml = state.cfg.show_progress_details ? `
+            <button type="button" class="details-toggle" onclick="HQ_App.toggleDetails('${escapeHtml(sid)}')">
+              <span>📋 تفاصيل الإنجاز (حفظ / درس / مراجعة / ملاحظة)${filledMark}</span>
+              <span>${isExpanded ? '▲' : '▼'}</span>
+            </button>
+            <div class="details-drawer ${isExpanded ? 'open' : ''}">
+              <div class="attended-zone ${!isAttended ? 'disabled' : ''}">
+                <div class="section-label">الجديد (الحفظ أو الدرس) + المقدار (وجه/صفحة):</div>
+                <div class="detail-grid">
+                  <input type="text" class="txt-input" placeholder="مثلاً: سورة النبأ / الدرس 5"
+                         value="${escapeHtml(rec.new_lesson)}"
+                         oninput="HQ_App.setField('${escapeHtml(sid)}', 'new_lesson', this.value)" />
+                  <div class="stepper">
+                    <button type="button" class="step-btn" onclick="HQ_App.stepAmount('${escapeHtml(sid)}', 'new_amount', -0.5)">−</button>
+                    <span class="step-val">${rec.new_amount}</span>
+                    <button type="button" class="step-btn" onclick="HQ_App.stepAmount('${escapeHtml(sid)}', 'new_amount', 0.5)">+</button>
+                  </div>
+                </div>
+
+                <div class="section-label">المراجعة + المقدار:</div>
+                <div class="detail-grid">
+                  <input type="text" class="txt-input" placeholder="مثلاً: جزء عم / مراجعة سابقة"
+                         value="${escapeHtml(rec.review_lesson)}"
+                         oninput="HQ_App.setField('${escapeHtml(sid)}', 'review_lesson', this.value)" />
+                  <div class="stepper">
+                    <button type="button" class="step-btn" onclick="HQ_App.stepAmount('${escapeHtml(sid)}', 'review_amount', -0.5)">−</button>
+                    <span class="step-val">${rec.review_amount}</span>
+                    <button type="button" class="step-btn" onclick="HQ_App.stepAmount('${escapeHtml(sid)}', 'review_amount', 0.5)">+</button>
+                  </div>
+                </div>
+
+                ${state.cfg.show_tajweed ? `
+                  <div class="section-label">التجويد / جودة القراءة:</div>
+                  <div class="mini-pills">
+                    ${TAJWEED_OPTS.map((opt, idx) => `
+                      <button type="button" class="mini-pill ${rec.tajweed === opt ? 'selected' : ''}"
+                              onclick="HQ_App.toggleMini('${escapeHtml(sid)}', 'tajweed', ${idx})">${opt}</button>
+                    `).join('')}
+                  </div>` : ''}
+
+                ${state.cfg.show_homework ? `
+                  <div class="section-label">الواجب / التحضير المسبق:</div>
+                  <div class="mini-pills">
+                    ${HOMEWORK_OPTS.map((opt, idx) => `
+                      <button type="button" class="mini-pill ${rec.homework === opt ? 'selected' : ''}"
+                              onclick="HQ_App.toggleMini('${escapeHtml(sid)}', 'homework', ${idx})">${opt}</button>
+                    `).join('')}
+                  </div>` : ''}
+
+                ${state.cfg.show_custom_points ? `
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;">
+                    <span class="section-label" style="margin:0;">نقاط إضافية / خصم استثنائي:</span>
+                    <div class="stepper">
+                      <button type="button" class="step-btn" onclick="HQ_App.stepCustomPoints('${escapeHtml(sid)}', -1)">−</button>
+                      <span class="step-val">${rec.custom_points > 0 ? '+' + rec.custom_points : rec.custom_points}</span>
+                      <button type="button" class="step-btn" onclick="HQ_App.stepCustomPoints('${escapeHtml(sid)}', 1)">+</button>
+                    </div>
+                  </div>` : ''}
+              </div>
+
+              <div class="section-label">ملاحظة خاصة بالطالب (تُحفظ حتى في حالة الغياب):</div>
+              <input type="text" class="txt-input" placeholder="اكتب ملاحظة للمتابعة أو سبب الاستئذان..."
+                     value="${escapeHtml(rec.note)}"
+                     oninput="HQ_App.setField('${escapeHtml(sid)}', 'note', this.value)" />
+            </div>` : '';
+
+          return `
+            <div class="student-card ${stClass}">
+              <div class="student-top">
+                <div>
+                  <div class="student-name">${escapeHtml(s.student_name)}</div>
+                  ${metaParts.length ? `<div class="student-meta">${metaParts.join(' • ')}</div>` : ''}
+                </div>
+                <div class="points-badge">⭐ ${pts.total} نقطة</div>
+              </div>
+
+              <div class="status-group">
+                <button type="button" class="status-btn ${rec.attendance === 'حاضر' ? 'act-present' : ''}"
+                        onclick="HQ_App.setAttendance('${escapeHtml(sid)}', 'حاضر')">🟢 حاضر</button>
+                <button type="button" class="status-btn ${rec.attendance === 'متأخر' ? 'act-late' : ''}"
+                        onclick="HQ_App.setAttendance('${escapeHtml(sid)}', 'متأخر')">🟠 متأخر</button>
+                <button type="button" class="status-btn ${rec.attendance === 'مستأذن' ? 'act-excused' : ''}"
+                        onclick="HQ_App.setAttendance('${escapeHtml(sid)}', 'مستأذن')">🟡 مستأذن</button>
+                <button type="button" class="status-btn ${rec.attendance === 'غائب' ? 'act-absent' : ''}"
+                        onclick="HQ_App.setAttendance('${escapeHtml(sid)}', 'غائب')">🔴 غائب</button>
+              </div>
+
+              <div class="attended-zone ${!isAttended ? 'disabled' : ''}">
+                ${gradesHtml}
+                ${chipsHtml}
+              </div>
+
+              ${detailsHtml}
+            </div>`;
+        }).join('');
+
+        updateLiveStats();
+      }
+
+      function updateLiveStats() {
+        let p = 0, l = 0, ex = 0, a = 0;
+        Object.values(state.records).forEach(r => {
+          if (r.attendance === 'حاضر') p++;
+          else if (r.attendance === 'متأخر') l++;
+          else if (r.attendance === 'مستأذن') ex++;
+          else a++;
+        });
+        document.getElementById('liveStats').innerHTML =
+          `🟢 حاضر: <b>${p}</b> | 🟠 متأخر: <b>${l}</b><br>🟡 مستأذن: <b>${ex}</b> | 🔴 غائب: <b>${a}</b>`;
+      }
+
+      async function submitReport() {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = 'جاري الحفظ...';
+        haptic('medium');
+
+        const recordsPayload = Object.keys(state.records).map(sid => {
+          const rec = state.records[sid];
+          const pts = calcPoints(rec);
+          return {
+            student_id: sid,
+            student_name: rec.student_name,
+            attendance: rec.attendance,
+            performance_grade: rec.performance_grade,
+            new_lesson: rec.new_lesson,
+            new_amount: rec.new_amount,
+            review_lesson: rec.review_lesson,
+            review_amount: rec.review_amount,
+            tajweed: rec.tajweed,
+            homework: rec.homework,
+            base_points: pts.base,
+            grade_points: pts.grade,
+            bonus_points: pts.bonus,
+            custom_points: pts.custom,
+            tags: Array.from(rec.selectedTags),
+            note: rec.note
+          };
+        });
+
+        const payload = {
+          action: 'submitReport',
+          teacher_id: state.teacherId,
+          circle_id: state.activeCircleId,
+          date: state.date,
+          session_topic: state.sessionTopic,
+          session_note: state.sessionNote,
+          records: recordsPayload
+        };
+
+        try {
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+
+          if (!result.ok) throw new Error(result.message || 'فشل الحفظ');
+
+          haptic('heavy');
+          showToast('✅ ' + result.message, 3500);
+          document.getElementById('editBanner').style.display = 'flex';
+
+          // تحديث النسخة المحلية لتسهيل التعديل الفوري
+          state.existingSessions[state.activeCircleId] = {
+            session_topic: state.sessionTopic,
+            session_note: state.sessionNote
+          };
+          recordsPayload.forEach(r => {
+            state.existingLogs[`${state.activeCircleId}_${r.student_id}`] = r;
+          });
+        } catch (err) {
+          showToast('❌ خطأ: ' + err.message, 4500);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'اعتماد وحفظ التقرير';
+        }
+      }
+
+      window.HQ_App = {
+        selectCircle(cid) {
+          haptic('light');
+          state.activeCircleId = cid;
+          renderCircleTabs();
+          buildCircleRecords();
+          renderAll();
+        },
+        toggleSessionBox() {
+          const body = document.getElementById('sessionBody');
+          const arrow = document.getElementById('sessionArrow');
+          const isOpen = body.classList.toggle('open');
+          arrow.textContent = isOpen ? '▲' : '▼';
+        },
+        setSessionField(field, val) {
+          if (field === 'topic') state.sessionTopic = val;
+          else state.sessionNote = val;
+        },
+        applyTopicToAll() {
+          if (!state.sessionTopic.trim()) {
+            showToast('اكتب عنوان درس اليوم أولاً');
+            return;
+          }
+          haptic('medium');
+          Object.values(state.records).forEach(r => {
+            if (r.attendance === 'حاضر' || r.attendance === 'متأخر') {
+              r.new_lesson = state.sessionTopic.trim();
+            }
+          });
+          renderAll();
+          showToast('✅ تم تعميم الدرس على جميع الحاضرين');
+        },
+        setAttendance(sid, val) {
+          haptic('light');
+          const rec = state.records[sid];
+          if (!rec) return;
+          rec.attendance = val;
+          renderAll();
+        },
+        toggleGrade(sid, idx) {
+          haptic('light');
+          const rec = state.records[sid];
+          const g = (state.cfg.performance_grades || [])[idx];
+          if (!rec || !g) return;
+          rec.performance_grade = (rec.performance_grade === g.label) ? '' : g.label;
+          renderAll();
+        },
+        toggleChip(sid, idx) {
+          haptic('light');
+          const rec = state.records[sid];
+          const c = (state.cfg.quick_chips || [])[idx];
+          if (!rec || !c) return;
+          if (rec.selectedTags.has(c.label)) rec.selectedTags.delete(c.label);
+          else rec.selectedTags.add(c.label);
+          renderAll();
+        },
+        toggleDetails(sid) {
+          haptic('light');
+          if (state.expandedCards.has(sid)) state.expandedCards.delete(sid);
+          else state.expandedCards.add(sid);
+          renderAll();
+        },
+        setField(sid, field, val) {
+          if (state.records[sid]) state.records[sid][field] = val;
+        },
+        stepAmount(sid, field, delta) {
+          haptic('light');
+          const rec = state.records[sid];
+          if (!rec) return;
+          rec[field] = Math.max(0, Number(((Number(rec[field]) || 0) + delta).toFixed(1)));
+          renderAll();
+        },
+        stepCustomPoints(sid, delta) {
+          haptic('light');
+          const rec = state.records[sid];
+          if (!rec) return;
+          rec.custom_points = (Number(rec.custom_points) || 0) + delta;
+          renderAll();
+        },
+        toggleMini(sid, field, idx) {
+          haptic('light');
+          const rec = state.records[sid];
+          const opts = field === 'tajweed' ? TAJWEED_OPTS : HOMEWORK_OPTS;
+          if (!rec || !opts[idx]) return;
+          rec[field] = (rec[field] === opts[idx]) ? '' : opts[idx];
+          renderAll();
+        },
+        markAllPresent() {
+          haptic('medium');
+          Object.values(state.records).forEach(r => { r.attendance = 'حاضر'; });
+          renderAll();
+        },
+        copyId() {
+          navigator.clipboard.writeText(state.teacherId).then(() => showToast('تم نسخ رقم المعرّف بنجاح ✅'));
+        },
+        reload: loadData,
+        submitReport
+      };
+
+      window.addEventListener('DOMContentLoaded', () => {
+        state.teacherId = detectTeacherId();
+        const picker = document.getElementById('datePicker');
+        picker.value = state.date;
+        picker.addEventListener('change', () => {
+          state.date = picker.value || getLocalToday();
+          loadData();
+        });
+
+        if (state.isTestMode) {
+          document.getElementById('testBanner').style.display = 'flex';
+          document.getElementById('testIdLabel').textContent = 'ID: ' + state.teacherId;
+        }
+        loadData();
+      });
+    })();
+  </script>
+</body>
+</html>
